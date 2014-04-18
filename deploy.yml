@@ -1,0 +1,10 @@
+---
+- name: Deploy docker / collectd / collectd-graphite
+  hosts: docker
+  sudo: True
+
+- include: playbooks/install-docker.yml
+
+- include: playbooks/docker-graphite.yml
+
+- include: playbooks/install-collectd.yml

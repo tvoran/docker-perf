@@ -1,0 +1,9 @@
+[docker]
+<hostname> ansible_ssh_host=<host ip>
+<hostname ansible_ssh_host=<host ip>
+ 
+[docker:vars]
+ansible_ssh_user=ubuntu
+
+[docker-master]
+<hostname>

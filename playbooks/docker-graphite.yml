@@ -1,0 +1,36 @@
+---
+- name: Setup docker container running collectd/carbon/graphite
+  hosts: docker-master
+  sudo: true
+
+  # This playbook assumes Ubuntu 12.04 LTS
+
+  vars:
+
+    DOCKER_NAME: collectd-graphite  #tag of the built docker image
+
+  tasks:
+
+  - name: pull collectd-graphite repo
+    git:
+      accept_hostkey: True
+      repo: https://github.com/tvoran/collectd-graphite.git
+      dest: /home/ubuntu/collectd-graphite
+
+  # TODO: only build if docker image doesn't exist, or a flag is passed, like rebuild_collectd_graphite
+  - name: build docker image
+    docker_image: path="/home/ubuntu/collectd-graphite" name={{ DOCKER_NAME }} state=build
+    # command: docker build -t {{ DOCKER_NAME }} /home/ubuntu/collectd-graphite
+
+  # Satisfy docker-py dependency for the ansible docker module
+  - include: docker-py.yml
+
+  - name: start docker image
+    docker:
+      image: '{{ DOCKER_NAME }}'
+      state: present
+      publish_all_ports: True
+
+  - name: Grab IP address and collectd port mapping for docker-master
+    debug: msg={{inventory_hostname}}:{{item['NetworkSettings']['Ports']['25826/udp'][0]['HostPort']}}
+    with_items: docker_containers

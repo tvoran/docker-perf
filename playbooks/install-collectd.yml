@@ -1,0 +1,29 @@
+---
+- name: Install collectd daemon (client)
+  hosts: docker
+  sudo: True
+
+  # This playbook assumes Ubuntu 12.04 LTS
+
+  # vars:
+  # 
+  #   collectd_port: 49153
+
+  tasks:
+
+  - name: Install collectd via apt
+    apt: pkg={{item}} state=installed update_cache=yes
+    with_items:
+      - collectd
+
+  - name: copy collectd exec script
+    copy:
+      src: ../files/collectd-docker.sh
+      dest: /home/ubuntu/collectd-docker.sh
+      mode: 0755
+
+  - name: collectd config
+    template:
+      src: ../templates/collectd.conf.j2
+      dest: /etc/collectd/collectd.conf
+      backup: yes

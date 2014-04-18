@@ -1,0 +1,54 @@
+---
+- name: install docker
+  hosts: docker
+  sudo: True
+
+  # This playbook assumes Ubuntu 12.04 LTS
+
+  vars:
+
+    docker_version: 0.10.0
+
+  tasks:
+
+  - name: Install kernel 3.8 packages
+    apt: pkg={{item}} state=installed update_cache=yes
+    with_items:
+      - linux-image-generic-lts-raring
+      - linux-headers-generic-lts-raring
+    register: kernel_installed
+
+  - name: Reboot if kernel installed
+    command: reboot
+    when: "kernel_installed|changed"
+    register: rebooted
+
+  - name: Wait for reboot
+    local_action: wait_for host={{ansible_ssh_host}} port=22 state=started
+    sudo: false
+    when: "rebooted|success"
+
+  - name: Install Docker repository key
+    apt_key: url="https://get.docker.io/gpg"
+
+  - name: Add Docker repository to sources list
+    apt_repository: 
+      repo: 'deb http://get.docker.io/ubuntu docker main' 
+      state: present
+      update_cache: yes
+
+  - name: Install lxc-docker {{docker_version}}
+    apt: pkg={{item}} state=installed
+    with_items:
+      - lxc
+      - lxc-docker={{docker_version}}
+
+  - name: Configure docker to use LXC
+    lineinfile: dest=/etc/default/docker line='DOCKER_OPTS="-e lxc"' state=present
+    notify:
+      - restart docker
+
+  handlers:
+  - name: restart docker
+    service: name=docker state=restarted
+
